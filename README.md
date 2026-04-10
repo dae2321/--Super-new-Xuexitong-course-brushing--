@@ -1,6 +1,5 @@
 # -超新学习通本地部署ai大模型刷课脚本-
-可部署ollama本地大模型，支持AnythingLLm知识库，可刷视频弹题，ai自动刷题，源脚本@chaoxing-script，地址：https://github.com/fysh1010/chaoxing-script
-集成大模型AI答题功能，支持任务点自动跳转、章节测验、作业、考试全网检索答案，音频、视频全自动静音播放，可视化参数配置
+可部署ollama本地大模型，支持AnythingLLm知识库，可刷视频弹题，ai自动刷题，AnythingLLm支持图片题，源脚本@chaoxing-script，地址：https://github.com/fysh1010/chaoxing-script
 
 # 📚 超星学习通智能刷题助手升级版
 
