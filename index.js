@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         📚 超星学习通智能刷题助手升级版
 // @namespace    chaoxing-dae2321
-// @version      1.0.4
+// @version      1.0.5
 // @author       dae2321
 // @description  📚 可部署ollama本地大模型，支持AnythingLLm知识库，可刷视频弹题，ai自动刷题，AnythingLLm支持图片题，需要api可联系作者体验 交流群q群1057741101
 
@@ -1157,6 +1157,29 @@
 
         return new Promise((resolve, reject) => {
           console.log(`🤖 [大模型] 发送${requestMethod}请求到: ${requestUrl}`);
+
+          // 添加超时保护，比GM_xmlhttpRequest的timeout更早触发，防止message channel关闭
+          const safetyTimeout = setTimeout(() => {
+            console.error(`⏱️ [大模型] 请求安全超时(115秒)，强制终止`);
+            const error = new Error("请求超时(115秒)");
+            handleError(error, '大模型API请求超时', false);
+            reject(error);
+          }, 115000);
+
+          let responseHandled = false;
+
+          const handleResponse = (callback) => {
+            return (...args) => {
+              if (responseHandled) {
+                console.warn(`⚠️ [大模型] 响应已处理，忽略重复回调`);
+                return;
+              }
+              responseHandled = true;
+              clearTimeout(safetyTimeout);
+              callback(...args);
+            };
+          };
+
           _GM_xmlhttpRequest({
             method: requestMethod,
             url: requestUrl,
@@ -1166,7 +1189,7 @@
               "Authorization": `Bearer ${config.llmApiKey}`
             },
             timeout: 120000,
-            onload: (res) => {
+            onload: handleResponse((res) => {
               try {
                 console.log(`🤖 [大模型] 收到响应 - 状态码: ${res.status}`);
 
@@ -1388,14 +1411,14 @@
                 handleError(e, '大模型响应解析', false);
                 reject(e);
               }
-            },
-            ontimeout: () => {
+            }),
+            ontimeout: handleResponse(() => {
               const error = new Error("请求超时(120秒)");
               console.error(`⏱️ [大模型] 请求超时`);
               handleError(error, '大模型API请求超时', false);
               reject(error);
-            },
-            onerror: (err) => {
+            }),
+            onerror: handleResponse((err) => {
               const errorMsg = err.error || err.statusText || '未知错误';
               const error = new Error(`网络错误: ${errorMsg}`);
 
@@ -1411,7 +1434,7 @@
 
               handleError(error, '大模型API网络错误', false);
               reject(error);
-            }
+            })
           });
         });
       }, retryConfig);
@@ -4163,9 +4186,12 @@
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
-        // 初始化视频时间变量
-        let lastValidTime = 0;
-        let lastValidDuration = 0;
+        // 初始化视频时间变量（使用闭包保存，避免刷新时重置）
+        let lastValidTime = player.currentTime() || 0;
+        let lastValidDuration = player.duration() || 0;
+
+        // 记录最后一次更新状态的时间，避免频繁更新
+        let lastStatusUpdateTime = Date.now();
 
         const intervalId = setInterval(async () => {
           shouldDebug() && this.askStore.log("🔄 视频播放循环迭代开始", "debug");
@@ -4175,24 +4201,30 @@
             let currentTime = player.currentTime();
             let duration = player.duration();
 
-            // 修复视频时间显示问题
+            // 修复视频时间显示问题 - 使用更稳健的处理
             if (isNaN(duration) || duration <= 0) {
+              shouldDebug() && this.askStore.log(`⚠️ 弹题时视频时长无效(${duration})，使用缓存值: ${lastValidDuration}`, "debug");
               duration = lastValidDuration || 0;
-            } else {
+            } else if (duration > 0) {
               lastValidDuration = duration;
             }
 
-            if (isNaN(currentTime) || currentTime < 0) {
+            // 当前时间处理：如果突然变为0，说明视频被重置，保持上次有效时间
+            if (isNaN(currentTime) || currentTime < 0 || (currentTime === 0 && lastValidTime > 1)) {
+              shouldDebug() && this.askStore.log(`⚠️ 弹题时当前时间无效(${currentTime})，使用缓存值: ${lastValidTime}`, "debug");
               currentTime = lastValidTime || 0;
-            } else {
+            } else if (currentTime > 0) {
               lastValidTime = currentTime;
             }
 
-            if (duration && duration > 0) {
+            // 只在必要时更新状态，避免频繁更新
+            const now = Date.now();
+            if (duration && duration > 0 && (now - lastStatusUpdateTime > 500)) {
               const percent = Math.floor((currentTime / duration) * 100);
               const timeStr = `${Math.floor(currentTime)}s/${Math.floor(duration)}s`;
               this.askStore.task.status = `弹题处理中 ${percent}% (${timeStr} @ ${videoSpeed}x)`;
               shouldDebug() && this.askStore.log(`⏱️ 弹题处理中 - 当前进度: ${percent}%`, "debug");
+              lastStatusUpdateTime = now;
             }
             return;
           }
@@ -4209,18 +4241,19 @@
           let currentTime = player.currentTime();
           let duration = player.duration();
 
-          // 修复视频时间显示问题
+          // 修复视频时间显示问题 - 使用更稳健的处理
           if (isNaN(duration) || duration <= 0) {
-            shouldDebug() && this.askStore.log(`⚠️ 视频时长无效，使用上次有效时长`, "debug");
+            shouldDebug() && this.askStore.log(`⚠️ 视频时长无效(${duration})，使用缓存值: ${lastValidDuration}`, "debug");
             duration = lastValidDuration || 0;
-          } else {
+          } else if (duration > 0) {
             lastValidDuration = duration;
           }
 
-          if (isNaN(currentTime) || currentTime < 0) {
-            shouldDebug() && this.askStore.log(`⚠️ 当前时间无效，使用上次有效时间`, "debug");
+          // 当前时间处理：如果突然变为0，说明视频被重置，保持上次有效时间
+          if (isNaN(currentTime) || currentTime < 0 || (currentTime === 0 && lastValidTime > 1)) {
+            shouldDebug() && this.askStore.log(`⚠️ 当前时间无效(${currentTime})，使用缓存值: ${lastValidTime}`, "debug");
             currentTime = lastValidTime || 0;
-          } else {
+          } else if (currentTime > 0) {
             lastValidTime = currentTime;
           }
 
@@ -4687,9 +4720,15 @@
           cxModel.askStore.log("所有任务点已完成，未开启自动切换", "warning");
           cxModel.askStore.msg("由于未开启自动切换,请手动切换");
         } else {
-          // 开启了自动切换
+          // 开启了自动切换 - 增加任务完成验证
           const nextButton = top == null ? void 0 : top.document.querySelector(".nextChapter");
-          if (nextButton) {
+
+          // 检查当前任务是否真的完成
+          const currentJobFinished = checkCurrentJobFinished(cardsIframe);
+
+          if (!currentJobFinished) {
+            cxModel.askStore.log("当前任务尚未完全完成，跳过自动切换", "warning");
+          } else if (nextButton) {
             cxModel.askStore.log("准备自动切换到下一章节", "info");
             nextButton.click();
           } else {
@@ -4697,12 +4736,75 @@
           }
         }
       };
+
+      // 任务完成状态检查函数
+      const checkCurrentJobFinished = (iframe) => {
+        try {
+          const iframeWin = iframe.contentWindow;
+          if (!iframeWin) return false;
+
+          // 检查任务列表中是否还有未完成的任务
+          const jobItems = iframeWin.document.querySelectorAll(".ans-job-icon");
+          for (const item of jobItems) {
+            const parent = item.parentElement;
+            if (parent && !parent.classList.contains("ans-job-finished")) {
+              // 检查是否是正在处理中的任务（可能有特殊状态）
+              if (!parent.classList.contains("ans-job-processing")) {
+                cxModel.askStore.log(`检测到未完成的任务: ${parent.textContent || "未知任务"}`, "debug");
+                return false;
+              }
+            }
+          }
+
+          // 检查视频播放状态
+          const videoIframes = iframeWin.document.querySelectorAll('iframe[src*="video"]');
+          for (const videoIframe of videoIframes) {
+            try {
+              const videoWin = videoIframe.contentWindow;
+              if (videoWin && videoWin.player) {
+                const player = videoWin.player;
+                if (player && typeof player.currentTime === 'function' && typeof player.duration === 'function') {
+                  const currentTime = player.currentTime();
+                  const duration = player.duration();
+                  if (duration > 0 && currentTime < duration - 1) {
+                    cxModel.askStore.log(`检测到未完成的视频: ${currentTime.toFixed(1)}s/${duration.toFixed(1)}s`, "debug");
+                    return false;
+                  }
+                }
+              }
+            } catch (e) {
+              // 跨域可能导致访问失败，忽略
+            }
+          }
+
+          return true;
+        } catch (e) {
+          cxModel.askStore.log(`任务完成检查异常: ${e.message}`, "warning");
+          return true; // 异常情况下默认允许切换
+        }
+      };
+
+      // 增加防抖机制，避免频繁切换
+      let lastUrlChangeTime = 0;
       setInterval(async () => {
-        await waitElementLoaded(_self, "#iframe");
-        const cardsIframe = _self.document.querySelector("#iframe");
-        await waitIframeLoaded(cardsIframe);
-        const _self1 = cardsIframe.contentWindow;
-        iframeCom != _self1.location.href && (iframeCom = _self1.location.href, cxModel.askStore.reset(), startWork());
+        try {
+          await waitElementLoaded(_self, "#iframe");
+          const cardsIframe = _self.document.querySelector("#iframe");
+          await waitIframeLoaded(cardsIframe);
+          const _self1 = cardsIframe.contentWindow;
+
+          // 检查URL是否真的变化，且距离上次变化超过2秒
+          const now = Date.now();
+          if (iframeCom !== _self1.location.href && (now - lastUrlChangeTime > 2000)) {
+            cxModel.askStore.log(`检测到章节切换: ${iframeCom} -> ${_self1.location.href}`, "info");
+            iframeCom = _self1.location.href;
+            lastUrlChangeTime = now;
+            cxModel.askStore.reset();
+            startWork();
+          }
+        } catch (e) {
+          cxModel.askStore.log(`章节切换检查异常: ${e.message}`, "warning");
+        }
       }, 2e3);
       break;
     case "/mooc2-ans/mycourse/stu":
