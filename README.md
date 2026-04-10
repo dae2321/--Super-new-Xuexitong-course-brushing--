@@ -39,16 +39,6 @@
 ### 大模型配置
 脚本支持多种大模型API接口：
 🤖 大模型配置案例
-支持的模型厂商
-厂商	模型系列	API地址	特点
-OpenAI	GPT系列	https://api.openai.com/v1/chat/completions	业界领先的通用大模型
-DeepSeek	DeepSeek系列	https://api.deepseek.com/v1/chat/completions	高性价比，代码能力强
-阿里云通义	Qwen系列	https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions	中文理解能力强
-魔搭社区	多种模型	https://api-inference.modelscope.cn/v1/chat/completions	开源模型丰富
-智谱AI	GLM系列	https://open.bigmodel.cn/api/paas/v4/chat/completions	中文对话效果好
-Ollama http://127.0.0.1:11/v1/chat/completions
-AnthingLLm http://127.0.0.1:11//api/v1/workspace/llm/chat
-配置示例
 1. OpenAI (GPT)
 API地址: https://api.openai.com/v1/chat/completions
 API密钥: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -174,10 +164,6 @@ API密钥: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 - **问题反馈**：2479190381@QQ.COM
 - **功能建议**：2479190381@QQ.COM
-
-## 🔄 更新日志
-
-详细更新内容请查看 [CHANGELOG.md](CHANGELOG.md)
 
 ### 最新版本 v2.1.6
 - ✅ 优化大模型答案提取逻辑
