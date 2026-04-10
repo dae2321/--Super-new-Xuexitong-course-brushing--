@@ -1,9 +1,10 @@
 ﻿// ==UserScript==
 // @name         📚 超星学习通智能刷题助手升级版
 // @namespace    chaoxing-dae2321
-// @version      1.0.0
+// @version      1.0.4
 // @author       dae2321
-// @description  📚 超星学习通智能刷题助手升级版，集成AI智能答题功能，支持全自动完成学习通平台的各类学习任务。具备章节测验自动答题、视频音频自动播放、作业考试智能解答、全网题库答案检索等核心功能，大幅提升学习效率。
+// @description  📚 可部署ollama本地大模型，支持AnythingLLm知识库，可刷视频弹题，ai自动刷题，AnythingLLm支持图片题，需要api可联系作者体验 交流群q群1057741101
+
 // @icon         https://www.google.com/s2/favicons?domain=chaoxing.com
 // @match        *://*.chaoxing.com/*
 // @match        *://*.edu.cn/*
@@ -60,6 +61,49 @@
     GM_addStyle(t);
   })("element-plus");
   var _GM_getResourceText = (() => "undefined" != typeof GM_getResourceText ? GM_getResourceText : void 0)(), _GM_getValue = (() => "undefined" != typeof GM_getValue ? GM_getValue : void 0)(), _GM_info = (() => "undefined" != typeof GM_info ? GM_info : void 0)(), _GM_setValue = (() => "undefined" != typeof GM_setValue ? GM_setValue : void 0)(), _GM_xmlhttpRequest = (() => "undefined" != typeof GM_xmlhttpRequest ? GM_xmlhttpRequest : void 0)(), _unsafeWindow = (() => "undefined" != typeof unsafeWindow ? unsafeWindow : void 0)();
+  // 清理无用用户信息
+  const cleanUserData = () => {
+    try {
+      // 清理配置中的敏感信息
+      const config = _GM_getValue("config");
+      if (config) {
+        // 重置敏感字段为空，但保留大模型API密钥
+        const cleanConfig = {
+          ...config,
+          thtoken: "",
+          yztoken: "",
+          gptKey: "",
+          // llmApiKey 保留不删除，以便刷新页面后继续使用
+          // 确保模型名称不为空
+          llmModel: config.llmModel || "gpt-3.5-turbo"
+        };
+        _GM_setValue("config", cleanConfig);
+        console.log("✅ 已清理配置中的敏感信息（保留大模型API密钥）");
+      }
+
+      // 清理答案缓存
+      _GM_setValue("answerCache", {});
+      console.log("✅ 已清理答案缓存");
+
+      // 清理其他可能的存储数据
+      const keysToClean = ["userInfo", "token", "uid", "session"];
+      keysToClean.forEach(key => {
+        try {
+          _GM_setValue(key, "");
+        } catch (e) {
+          // 忽略不存在的键
+        }
+      });
+
+      console.log("✅ 用户信息清理完成");
+    } catch (error) {
+      console.error("❌ 清理用户信息时出错:", error);
+    }
+  };
+
+  // 立即执行清理
+  cleanUserData();
+
   const getConfig = () => {
     const config = _GM_getValue("config");
     return config || defaultConfig$1;
@@ -994,9 +1038,9 @@
       }
 
       const retryConfig = {
-        retries: config.llmRetries || 3,
+        retries: Math.min(config.llmRetries || 2, 3), // 限制最大重试次数为3次
         baseDelayMs: 3000,
-        maxDelayMs: 30000,
+        maxDelayMs: 15000, // 减少最大延迟时间
         exponentialBase: 1.5,
         context: "大模型API"
       };
@@ -1352,8 +1396,19 @@
               reject(error);
             },
             onerror: (err) => {
-              const error = new Error(`网络错误: ${err.error || err.statusText || '未知错误'}`);
-              console.error(`❌ [大模型] 网络错误:`, err.error || err.statusText || '未知错误');
+              const errorMsg = err.error || err.statusText || '未知错误';
+              const error = new Error(`网络错误: ${errorMsg}`);
+
+              // 详细诊断网络错误
+              console.error(`❌ [大模型] 网络错误详情:`, err);
+
+              // 检查是否为本地API连接问题
+              if (config.llmApiUrl.includes('127.0.0.1') || config.llmApiUrl.includes('localhost')) {
+                console.warn(`⚠️ [大模型] 检测到本地API地址: ${config.llmApiUrl}`);
+                console.warn(`⚠️ [大模型] 请确保本地大模型服务已启动并运行在指定端口`);
+                console.warn(`⚠️ [大模型] 常见问题：服务未启动、端口被占用、防火墙阻止`);
+              }
+
               handleError(error, '大模型API网络错误', false);
               reject(error);
             }
@@ -3266,7 +3321,7 @@
     }
   }), _sfc_main = vue.defineComponent({
     setup() {
-      const askstore = useAskStore(), { dialogVisible, count, questionList, task } = pinia$1.storeToRefs(askstore), askActiveName = vue.ref("first"), askActiveNames = vue.ref(["1"]), msg = vue.ref("<h3>本脚本仅用于学习交流，请24h内删除</h3><br><p style='color:red;'>禁止用于各种非法用途，否则后果自负</p><br><p>本脚本题库接口均来源于网络以及用户反馈添加，不对题库准确率以及可用性负责，请自行判断、评估是否使用。</p>"), formstoreObj = useformStore(), { forminput, dialogV, activeName } = pinia$1.storeToRefs(formstoreObj), ruleFormRef = vue.ref(), rules = vue.reactive({
+      const askstore = useAskStore(), { dialogVisible, count, questionList, task } = pinia$1.storeToRefs(askstore), askActiveName = vue.ref("first"), askActiveNames = vue.ref(["1"]), msg = vue.ref("<h3>本脚本仅用于学习交流，请24h内删除</h3><br><p style='color:red;'>禁止用于各种非法用途，否则后果自负</p><br><p>需要体验api 交流学习进q群1057741101。</p>"), formstoreObj = useformStore(), { forminput, dialogV, activeName } = pinia$1.storeToRefs(formstoreObj), ruleFormRef = vue.ref(), rules = vue.reactive({
         interval: [{ required: true, message: "间隔时间不能为空" }, { type: "number", message: "间隔时间必须为数字" }, { validator: (rule, value) => value >= 1 ? Promise.resolve() : Promise.reject("间隔时间必须大于等于1") }], llmAnswerInterval: [{ required: true, message: "大模型回答间隔不能为空" }, { type: "number", message: "大模型回答间隔必须为数字" }, { validator: (rule, value) => value >= 1 ? Promise.resolve() : Promise.reject("大模型回答间隔必须大于等于1") }], token: [{
           validator: (rule, value) => {
             if (value) {
