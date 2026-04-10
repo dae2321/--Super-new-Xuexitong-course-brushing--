@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         📚 超星学习通智能刷题助手升级版
 // @namespace    chaoxing-dae2321
-// @version      1.0.5
+// @version      1.0.6
 // @author       dae2321
 // @description  📚 可部署ollama本地大模型，支持AnythingLLm知识库，可刷视频弹题，ai自动刷题，AnythingLLm支持图片题，需要api可联系作者体验 交流群q群1057741101
 
@@ -3653,12 +3653,41 @@
           const container = questionInfo.container;
           const questionWin = questionInfo.win || iframeWindow;
 
-          // 解密弹题中的加密字体
+          this.askStore.log("🔒 正在阻止弹题自动关闭...", "debug");
+
+          try {
+            const originalSetTimeout = questionWin.setTimeout;
+            const originalSetInterval = questionWin.setInterval;
+            questionWin.setTimeout = (...args) => {
+              if (args[1] < 30000) {
+                return originalSetTimeout.apply(questionWin, args);
+              }
+              this.askStore.log(`⚠️ 阻止了可能关闭弹题的定时器: ${args[1]}ms`, "debug");
+              return -1;
+            };
+            questionWin.setInterval = (...args) => {
+              if (args[1] < 30000) {
+                return originalSetInterval.apply(questionWin, args);
+              }
+              return -1;
+            };
+
+            container.style.display = 'block';
+            container.style.visibility = 'visible';
+            container.style.opacity = '1';
+            container.style.zIndex = '999999';
+
+            this.askStore.log("✅ 弹题已冻结，不会自动关闭", "success");
+          } catch (e) {
+            this.askStore.log(`阻止弹题自动关闭时出错（非致命）: ${e.message}`, "warning");
+          }
+
           decode(questionWin);
           this.askStore.log("✅ 已解密弹题中的加密字体", "success");
 
           this.askStore.log(`容器: ${container.className}`, "debug");
 
+          let keepPopupVisibleTimer = null;
           let questionElements = [];
 
           // 优先使用 detectPopupQuestion 已经验证过的 container 本身
@@ -3932,6 +3961,24 @@
             return false;
           }
 
+          try {
+            keepPopupVisibleTimer = setInterval(() => {
+              try {
+                if (container && container.offsetParent === null) {
+                  this.askStore.log("🔄 弹题被隐藏，尝试恢复...", "warning");
+                  container.style.display = 'block';
+                  container.style.visibility = 'visible';
+                  container.style.opacity = '1';
+                  container.style.zIndex = '999999';
+                }
+              } catch (e) {
+              }
+            }, 500);
+            this.askStore.log("✅ 已启动弹题可见性监控", "debug");
+          } catch (e) {
+            this.askStore.log(`启动弹题可见性监控失败（非致命）: ${e.message}`, "warning");
+          }
+
           for (const { data, timu } of allQuestionData) {
             this.askStore.log(`弹题: ${data.question.substring(0, 30)}...`, "info");
             this.askStore.log(`正在获取答案...`, "info");
@@ -4108,6 +4155,13 @@
           return false;
         } finally {
           isProcessingPopupQuestion = false;
+          if (typeof keepPopupVisibleTimer !== 'undefined' && keepPopupVisibleTimer !== null) {
+            try {
+              clearInterval(keepPopupVisibleTimer);
+              this.askStore.log("🗑️ 已清理弹题可见性监控定时器", "debug");
+            } catch (e) {
+            }
+          }
           if (popupHandledSuccessfully) {
             player.play();
             if (playerButton) playerButton.click();
@@ -4371,7 +4425,7 @@
         const Timu = iframeWindow.document.querySelectorAll(".TiMu");
         if (!Timu)
           return void resolve();
-        let ques = [], succ = 0;
+        let ques = [], succ = 0, fail = 0;
         const taskType = isExam ? "章节测验" : "作业";
         this.askStore.log(`检测到 ${Timu.length} 道题目，任务类型: ${taskType}，isExam: ${isExam}`, "info");
         for (let i = 0; i < Timu.length; i++) {
@@ -4413,19 +4467,40 @@
           const hasCheckedRadio = timu.querySelector('input[type="radio"]:checked');
           const hasCheckedCheckbox = timu.querySelector('input[type="checkbox"]:checked');
           const hasCheckAnswer = timu.querySelector('.check_answer') || timu.querySelector('.check_answer_dx');
-          if (hasCheckedRadio || hasCheckedCheckbox || hasCheckAnswer) {
+          const hasTextarea = timu.querySelector('textarea')?.value?.trim();
+          if (hasCheckedRadio || hasCheckedCheckbox || hasCheckAnswer || hasTextarea) {
             actualAnswered++;
           }
         }
 
-        this.askStore.log(`实际已答题: ${actualAnswered}/${ques.length}，标记已答题: ${succ}/${ques.length}`, "info");
+        this.askStore.log(`实际已答题: ${actualAnswered}/${ques.length}，有答案的题目: ${succ}/${ques.length}`, "info");
 
-        // 使用实际已答题数
-        const finalSucc = Math.min(actualAnswered, succ);
+        // 使用实际已答题数进行判断
+        const answeredRate = actualAnswered / ques.length;
+        const hasAllAnswers = actualAnswered >= ques.length;
 
-        this.defaultConfig.autoSubmit ? (finalSucc < ques.length ? (this.askStore.log("有题目暂无答案，暂不提交", "error"), iframeWindow.alert = function (e) {
-        }, iframeWindow.noSubmit()) : finalSucc / ques.length < this.defaultConfig.minAccuracy ? (this.askStore.log("正确率不足，暂存", "error"), iframeWindow.alert = function (e) {
-        }, iframeWindow.noSubmit()) : (iframeWindow.btnBlueSubmit(), await sleep(3), iframeWindow.submitCheckTimes(), this.askStore.log("已提交", "success")), this.askStore.task.status = `${taskType}已完成，正确率:${finalSucc}/${ques.length}`, resolve()) : (this.askStore.log("已完成答题，等待手动提交", "success"), this.askStore.task.status = `等待手动提交,正确率:${finalSucc}/${ques.length}`);
+        if (this.defaultConfig.autoSubmit) {
+          if (!hasAllAnswers) {
+            this.askStore.log(`有题目未作答(${actualAnswered}/${ques.length})，暂不提交`, "error");
+            iframeWindow.alert = function (e) { };
+            iframeWindow.noSubmit();
+          } else if (answeredRate < this.defaultConfig.minAccuracy) {
+            this.askStore.log(`已答题率(${(answeredRate * 100).toFixed(1)}%)不足${(this.defaultConfig.minAccuracy * 100).toFixed(0)}%，暂存`, "error");
+            iframeWindow.alert = function (e) { };
+            iframeWindow.noSubmit();
+          } else {
+            iframeWindow.btnBlueSubmit();
+            await sleep(3);
+            iframeWindow.submitCheckTimes();
+            this.askStore.log("已提交", "success");
+          }
+          this.askStore.task.status = `${taskType}已完成，已答题:${actualAnswered}/${ques.length}`;
+          resolve();
+        } else {
+          this.askStore.log("已完成答题，等待手动提交", "success");
+          this.askStore.task.status = `等待手动提交,已答题:${actualAnswered}/${ques.length}`;
+          resolve();
+        }
       });
     }
     homework() {
@@ -4741,23 +4816,71 @@
       const checkCurrentJobFinished = (iframe) => {
         try {
           const iframeWin = iframe.contentWindow;
-          if (!iframeWin) return false;
+          if (!iframeWin) return true;
+
+          const doc = iframeWin.document;
+          if (!doc) return true;
+
+          // 检查是否有测验/作业已提交的标志
+          const submitSuccessFlag = doc.querySelector('.submitSuccess') ||
+            doc.querySelector('.layui-layer-content')?.textContent?.includes('提交成功') ||
+            doc.querySelector('.ans-submit-success');
+          if (submitSuccessFlag) {
+            cxModel.askStore.log(`检测到提交成功标志，任务已完成`, "debug");
+            return true;
+          }
+
+          // 检查是否有"答题已完成"或类似提示
+          const bodyText = doc.body?.innerText || "";
+          if (bodyText.includes("答题已完成") || bodyText.includes("已提交") || bodyText.includes("提交成功")) {
+            cxModel.askStore.log(`检测到提交成功文本，任务已完成`, "debug");
+            return true;
+          }
 
           // 检查任务列表中是否还有未完成的任务
-          const jobItems = iframeWin.document.querySelectorAll(".ans-job-icon");
+          const jobItems = doc.querySelectorAll(".ans-job-icon");
+          let hasUnfinishedJob = false;
+
           for (const item of jobItems) {
             const parent = item.parentElement;
             if (parent && !parent.classList.contains("ans-job-finished")) {
-              // 检查是否是正在处理中的任务（可能有特殊状态）
+              // 检查是否是正在处理中的任务
               if (!parent.classList.contains("ans-job-processing")) {
-                cxModel.askStore.log(`检测到未完成的任务: ${parent.textContent || "未知任务"}`, "debug");
-                return false;
+                // 检查是否是测验/作业类型的任务
+                const iframe = parent.querySelector('iframe');
+                if (iframe) {
+                  const src = iframe.src || "";
+                  // 如果是测验或作业，检查是否已经提交
+                  if (src.includes("/work/") || src.includes("/exam/")) {
+                    // 检查iframe内是否有提交成功的标志
+                    try {
+                      const innerDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                      if (innerDoc) {
+                        const hasSubmitBtn = innerDoc.querySelector('.btnBlueSubmit, .submitBtn, [type="submit"]');
+                        const hasResult = innerDoc.querySelector('.result, .score, .ans-result');
+                        // 如果没有提交按钮或者有结果显示，说明已完成
+                        if (!hasSubmitBtn || hasResult) {
+                          cxModel.askStore.log(`测验/作业任务已完成（无提交按钮或有结果）`, "debug");
+                          continue;
+                        }
+                      }
+                    } catch (e) {
+                      // 跨域，忽略
+                    }
+                  }
+                }
+                cxModel.askStore.log(`检测到未完成的任务: ${parent.textContent?.substring(0, 20) || "未知任务"}`, "debug");
+                hasUnfinishedJob = true;
               }
             }
           }
 
-          // 检查视频播放状态
-          const videoIframes = iframeWin.document.querySelectorAll('iframe[src*="video"]');
+          if (hasUnfinishedJob) {
+            return false;
+          }
+
+          // 检查视频播放状态（仅当没有其他任务时）
+          const videoIframes = doc.querySelectorAll('iframe[src*="video"]');
           for (const videoIframe of videoIframes) {
             try {
               const videoWin = videoIframe.contentWindow;
@@ -4766,7 +4889,7 @@
                 if (player && typeof player.currentTime === 'function' && typeof player.duration === 'function') {
                   const currentTime = player.currentTime();
                   const duration = player.duration();
-                  if (duration > 0 && currentTime < duration - 1) {
+                  if (duration > 0 && currentTime < duration - 2) {
                     cxModel.askStore.log(`检测到未完成的视频: ${currentTime.toFixed(1)}s/${duration.toFixed(1)}s`, "debug");
                     return false;
                   }
@@ -4780,7 +4903,7 @@
           return true;
         } catch (e) {
           cxModel.askStore.log(`任务完成检查异常: ${e.message}`, "warning");
-          return true; // 异常情况下默认允许切换
+          return true;
         }
       };
 
