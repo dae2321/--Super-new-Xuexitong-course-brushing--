@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         📚 超星学习通智能刷题助手升级版
 // @namespace    chaoxing-dae2321
-// @version      2.1.6
+// @version      1.0.0
 // @author       dae2321
 // @description  📚 超星学习通智能刷题助手升级版，集成AI智能答题功能，支持全自动完成学习通平台的各类学习任务。具备章节测验自动答题、视频音频自动播放、作业考试智能解答、全网题库答案检索等核心功能，大幅提升学习效率。
 // @icon         https://www.google.com/s2/favicons?domain=chaoxing.com
