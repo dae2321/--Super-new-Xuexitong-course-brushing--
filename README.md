@@ -1,5 +1,5 @@
 # -超新学习通本地部署ai大模型刷课脚本二改-
-可部署ollama本地大模型，支持AnythingLLm知识库，可刷视频弹题，ai自动刷题，AnythingLLm支持图片题，源脚本@chaoxing-script，地址：https://github.com/fysh1010/chaoxing-script
+可使用ollama部署本地大模型，支持AnythingLLm知识库，可刷视频弹题，ai自动刷题，AnythingLLm支持图片题，源脚本@chaoxing-script，地址：https://github.com/fysh1010/chaoxing-script
 
 需要api可联系作者体验 交流群q群1057741101
 
