@@ -1,7 +1,7 @@
-﻿// ==UserScript==
+// ==UserScript==
 // @name         📚 超星学习通智能刷题助手升级版
 // @namespace    chaoxing-dae2321
-// @version      1.0.6
+// @version      1.0.7
 // @author       dae2321
 // @description  📚 可部署ollama本地大模型，支持AnythingLLm知识库，可刷视频弹题，ai自动刷题，AnythingLLm支持图片题，需要api可联系作者体验 交流群q群1057741101
 
@@ -107,7 +107,7 @@
   const getConfig = () => {
     const config = _GM_getValue("config");
     return config || defaultConfig$1;
-  }, defaultConfig$1 = { debugger: false, autoAnswer: true, autoVideo: true, autoJump: true, autoSubmit: true, thtoken: "", yztoken: "", gptKey: "", gptModel: "gpt-3.5-turbo", gpt: false, gptType: ["0", "1", "2", "3", "4", "5", "6", "7"], interval: 3, llmAnswerInterval: 3, minAccuracy: 0.8, autoExam: true, hideExam: false, notice: "本脚本仅供学习交流使用，严禁用于商业用途，否则后果自负！", useLLM: false, llmApiUrl: "http://127.0.0.1:3301/api/v1/workspace/llm/chat", llmApiKey: "", llmModel: "gpt-3.5-turbo", llmRetries: 2, videoSpeed: 16, useCustomPrompt: false, useKnowledgeBase: false, enableBackground: false }, userConfig = [{ name: "base", label: "基础配置", config: [{ name: "interval", label: "通用间隔(秒)", type: "number", value: defaultConfig$1.interval, desc: "通用间隔，用于脚本运行切换" }, { name: "llmAnswerInterval", label: "大模型回答后间隔(秒)", type: "number", value: defaultConfig$1.llmAnswerInterval, desc: "大模型回答后等待多少秒再进行答题" }, { name: "videoSpeed", label: "视频倍速", type: "select", value: defaultConfig$1.videoSpeed, desc: "视频播放速度，倍速有风险", options: [{ label: "1倍速", value: 1 }, { label: "2倍速", value: 2 }, { label: "3倍速", value: 3 }, { label: "4倍速", value: 4 }, { label: "8倍速", value: 8 }, { label: "16倍速", value: 16 }, { label: "32倍速", value: 32 }] }, { name: "enableBackground", label: "启用挂机模式", type: "switch", value: defaultConfig$1.enableBackground, desc: "开启后，支持后台挂机运行" }] }, { name: "llm", label: "大模型配置", config: [{ name: "useLLM", label: "启用大模型答题", type: "switch", value: defaultConfig$1.useLLM, desc: "开启后，优先使用大模型生成答案" }, { name: "llmApiUrl", label: "大模型API地址", type: "input", value: defaultConfig$1.llmApiUrl, desc: "例如: https://api.openai.com/v1/chat/completions" }, { name: "llmApiKey", label: "大模型API密钥", type: "input", value: defaultConfig$1.llmApiKey, desc: "填写您的API Key" }, { name: "llmModel", label: "大模型名称", type: "input", value: defaultConfig$1.llmModel, desc: "例如: gpt-3.5-turbo, gpt-4等" }, { name: "llmRetries", label: "请求失败重试次数", type: "select", value: defaultConfig$1.llmRetries, desc: "API请求失败后的重试次数", options: [{ label: "不重试", value: 0 }, { label: "重试1次", value: 1 }, { label: "重试2次", value: 2 }, { label: "重试3次", value: 3 }, { label: "重试5次", value: 5 }] }, { name: "useCustomPrompt", label: "使用自定义提示词", type: "switch", value: defaultConfig$1.useCustomPrompt, desc: "开启后，将不使用脚本生成的提示词，直接发送题目给大模型" }] }, { name: "chapter", label: "章节配置", config: [{ name: "autoAnswer", label: "自动答题", type: "switch", value: defaultConfig$1.autoAnswer, desc: "开启后，会自动答题" }, { name: "autoVideo", label: "自动视频", type: "switch", value: defaultConfig$1.autoVideo, desc: "开启后，会自动观看视频" }, { name: "autoJump", label: "自动切换", type: "switch", value: defaultConfig$1.autoVideo, desc: "开启后，会自动切换章节" }, { name: "autoSubmit", label: "自动提交", type: "switch", value: defaultConfig$1.autoSubmit, desc: "开启后，会自动提交答案" }, { name: "minAccuracy", label: "最低正确率", type: "input", value: defaultConfig$1.minAccuracy, desc: "不满足最低正确率则不会自动提交答案" }] }, { name: "exam", label: "作业/考试配置", config: [{ name: "autoExam", label: "考试自动切换", type: "switch", value: defaultConfig$1.autoExam, desc: "开启后，会考试会自动切换" }] }], useformStore = pinia$1.defineStore({
+  }, defaultConfig$1 = { debugger: false, autoAnswer: true, autoVideo: true, autoJump: true, autoSubmit: true, thtoken: "", yztoken: "", gptKey: "", gptModel: "gpt-3.5-turbo", gpt: false, gptType: ["0", "1", "2", "3", "4", "5", "6", "7"], interval: 3, llmAnswerInterval: 3, autoExam: true, hideExam: false, notice: "本脚本仅供学习交流使用，严禁用于商业用途，否则后果自负！", useLLM: false, llmApiUrl: "http://127.0.0.1:3301/api/v1/workspace/llm/chat", llmApiKey: "", llmModel: "gpt-3.5-turbo", llmRetries: 2, videoSpeed: 16, useCustomPrompt: false, useKnowledgeBase: false, enableBackground: false }, userConfig = [{ name: "base", label: "基础配置", config: [{ name: "interval", label: "通用间隔(秒)", type: "number", value: defaultConfig$1.interval, desc: "通用间隔，用于脚本运行切换" }, { name: "llmAnswerInterval", label: "大模型回答后间隔(秒)", type: "number", value: defaultConfig$1.llmAnswerInterval, desc: "大模型回答后等待多少秒再进行答题" }, { name: "videoSpeed", label: "视频倍速", type: "select", value: defaultConfig$1.videoSpeed, desc: "视频播放速度，倍速有风险", options: [{ label: "1倍速", value: 1 }, { label: "2倍速", value: 2 }, { label: "3倍速", value: 3 }, { label: "4倍速", value: 4 }, { label: "8倍速", value: 8 }, { label: "16倍速", value: 16 }, { label: "32倍速", value: 32 }] }, { name: "enableBackground", label: "启用挂机模式", type: "switch", value: defaultConfig$1.enableBackground, desc: "开启后，支持后台挂机运行" }] }, { name: "llm", label: "大模型配置", config: [{ name: "useLLM", label: "启用大模型答题", type: "switch", value: defaultConfig$1.useLLM, desc: "开启后，优先使用大模型生成答案" }, { name: "llmApiUrl", label: "大模型API地址", type: "input", value: defaultConfig$1.llmApiUrl, desc: "例如: https://api.openai.com/v1/chat/completions" }, { name: "llmApiKey", label: "大模型API密钥", type: "input", value: defaultConfig$1.llmApiKey, desc: "填写您的API Key" }, { name: "llmModel", label: "大模型名称", type: "input", value: defaultConfig$1.llmModel, desc: "例如: gpt-3.5-turbo, gpt-4等" }, { name: "llmRetries", label: "请求失败重试次数", type: "select", value: defaultConfig$1.llmRetries, desc: "API请求失败后的重试次数", options: [{ label: "不重试", value: 0 }, { label: "重试1次", value: 1 }, { label: "重试2次", value: 2 }, { label: "重试3次", value: 3 }, { label: "重试5次", value: 5 }] }, { name: "useCustomPrompt", label: "使用自定义提示词", type: "switch", value: defaultConfig$1.useCustomPrompt, desc: "开启后，将不使用脚本生成的提示词，直接发送题目给大模型" }] }, { name: "chapter", label: "章节配置", config: [{ name: "autoAnswer", label: "自动答题", type: "switch", value: defaultConfig$1.autoAnswer, desc: "开启后，会自动答题" }, { name: "autoVideo", label: "自动视频", type: "switch", value: defaultConfig$1.autoVideo, desc: "开启后，会自动观看视频" }, { name: "autoJump", label: "自动切换", type: "switch", value: defaultConfig$1.autoVideo, desc: "开启后，会自动切换章节" }, { name: "autoSubmit", label: "自动提交", type: "switch", value: defaultConfig$1.autoSubmit, desc: "开启后，会自动提交答案" }] }, { name: "exam", label: "作业/考试配置", config: [{ name: "autoExam", label: "考试自动切换", type: "switch", value: defaultConfig$1.autoExam, desc: "开启后，会考试会自动切换" }] }], useformStore = pinia$1.defineStore({
     id: "formstore", state: () => ({ forminput: getConfig(), dialogV: false, activeName: "base" }), actions: {
       saveConfig(forminput) {
         _GM_setValue("config", forminput);
@@ -1146,9 +1146,9 @@
         }
 
         if (!isAnythingLLM) {
-          console.log(`🤖 [大模型] 请求参数 - temperature: ${requestData.temperature}, max_tokens: ${requestData.max_tokens}, top_p: ${requestData.top_p}, top_k: ${requestData.top_k}`);
+          console.log(`🤖 [大模型] 请求参数 - temperature: ${requestData.temperature}, max_tokens: ${requestData.max_tokens}, top_p: ${requestData.top_p}, top_k: ${requestData.top_k}, model: ${requestData.model}`);
         } else {
-          console.log(`🤖 [大模型] 请求参数 - POST请求，提示词长度: ${prompt.length}字符, model: ${requestData.model}`);
+          console.log(`🤖 [大模型] 请求参数 - POST请求，提示词长度: ${prompt.length}字符, mode: chat`);
         }
 
         if (!/^https:\/\//i.test(config.llmApiUrl)) {
@@ -3297,7 +3297,7 @@
   }, useAskStore = pinia$1.defineStore({
     id: "ask", state: () => ({ dialogVisible: false, count: 0, questionList: [], task: { name: "暂未加载", work: { questionList: [], inx: 0 }, video: [], log: [], status: "" } }), actions: {
       reset() {
-        this.task.name = "暂未加载", this.task.work = { questionList: [], inx: 0 }, this.task.video = [], this.task.status = "", this.count = 0;
+        this.task.name = "暂未加载", this.task.work = { questionList: [], inx: 0 }, this.task.video = [], this.task.log = [], this.task.status = "", this.count = 0;
       }, select(index) {
         this.task.work.questionList[index].selected = true, this.task.work.inx = index;
         try {
@@ -3961,17 +3961,37 @@
             return false;
           }
 
+          let popupHiddenCount = 0;
+          const MAX_HIDDEN_RETRIES = 10;
+
           try {
-            keepPopupVisibleTimer = setInterval(() => {
+            keepPopupVisibleTimer = window.popupIntervalId = setInterval(() => {
               try {
-                if (container && container.offsetParent === null) {
-                  this.askStore.log("🔄 弹题被隐藏，尝试恢复...", "warning");
+                if (!container) {
+                  this.askStore.log("🔒 弹题容器不存在，停止监控", "warning");
+                  clearInterval(keepPopupVisibleTimer);
+                  keepPopupVisibleTimer = null;
+                  return;
+                }
+
+                if (container.offsetParent === null) {
+                  popupHiddenCount++;
+                  if (popupHiddenCount > MAX_HIDDEN_RETRIES) {
+                    this.askStore.log("🔒 弹题多次隐藏无法恢复，停止监控", "warning");
+                    clearInterval(keepPopupVisibleTimer);
+                    keepPopupVisibleTimer = null;
+                    return;
+                  }
+                  this.askStore.log(`🔄 弹题被隐藏，尝试恢复... (${popupHiddenCount}/${MAX_HIDDEN_RETRIES})`, "warning");
                   container.style.display = 'block';
                   container.style.visibility = 'visible';
                   container.style.opacity = '1';
                   container.style.zIndex = '999999';
+                } else {
+                  popupHiddenCount = 0;
                 }
               } catch (e) {
+                this.askStore.log(`弹题监控异常: ${e.message}`, "warning");
               }
             }, 500);
             this.askStore.log("✅ 已启动弹题可见性监控", "debug");
@@ -4097,12 +4117,29 @@
 
               await sleep(2);
 
-              const isStillVisible = container.offsetParent !== null;
-              const hasError = container.querySelector(".spanNot") || container.querySelector(".error");
+              let isStillVisible = false;
+              let hasError = false;
+              try {
+                isStillVisible = container && container.offsetParent !== null;
+                hasError = container && (container.querySelector(".spanNot") || container.querySelector(".error"));
+              } catch (e) {
+                isStillVisible = false;
+                hasError = false;
+              }
 
               if (!isStillVisible || !hasError) {
                 submitSuccess = true;
                 this.askStore.log("弹题提交成功", "success");
+
+                // 提交成功后立即清理监控器
+                if (keepPopupVisibleTimer) {
+                  try {
+                    clearInterval(keepPopupVisibleTimer);
+                    keepPopupVisibleTimer = null;
+                    this.askStore.log("🗑️ 提交成功，已清理弹题可见性监控定时器", "debug");
+                  } catch (e) {
+                  }
+                }
                 break;
               }
 
@@ -4155,9 +4192,10 @@
           return false;
         } finally {
           isProcessingPopupQuestion = false;
-          if (typeof keepPopupVisibleTimer !== 'undefined' && keepPopupVisibleTimer !== null) {
+          if (keepPopupVisibleTimer) {
             try {
               clearInterval(keepPopupVisibleTimer);
+              keepPopupVisibleTimer = null;
               this.askStore.log("🗑️ 已清理弹题可见性监控定时器", "debug");
             } catch (e) {
             }
@@ -4247,7 +4285,7 @@
         // 记录最后一次更新状态的时间，避免频繁更新
         let lastStatusUpdateTime = Date.now();
 
-        const intervalId = setInterval(async () => {
+        const intervalId = window.videoIntervalId = setInterval(async () => {
           shouldDebug() && this.askStore.log("🔄 视频播放循环迭代开始", "debug");
 
           if (isProcessingPopupQuestion) {
@@ -4276,7 +4314,7 @@
             if (duration && duration > 0 && (now - lastStatusUpdateTime > 500)) {
               const percent = Math.floor((currentTime / duration) * 100);
               const timeStr = `${Math.floor(currentTime)}s/${Math.floor(duration)}s`;
-              this.askStore.task.status = `弹题处理中 ${percent}% (${timeStr} @ ${videoSpeed}x)`;
+              this.askStore.task.status = `🎬 弹题处理中 ${percent}% (${timeStr} @ ${videoSpeed}x)`;
               shouldDebug() && this.askStore.log(`⏱️ 弹题处理中 - 当前进度: ${percent}%`, "debug");
               lastStatusUpdateTime = now;
             }
@@ -4316,7 +4354,7 @@
           if (duration && duration > 0) {
             const percent = Math.floor((currentTime / duration) * 100);
             const timeStr = `${Math.floor(currentTime)}s/${Math.floor(duration)}s`;
-            this.askStore.task.status = `视频播放中 ${percent}% (${timeStr} @ ${videoSpeed}x)`;
+            this.askStore.task.status = `🎬 正在观看视频 ${percent}% (${timeStr} @ ${videoSpeed}x)`;
 
             if (percent >= lastLoggedPercent + 10 && percent % 10 === 0) {
               this.askStore.log(`📊 视频播放进度: ${percent}%`, "info");
@@ -4419,7 +4457,7 @@
         });
       });
     }
-    work(iframeWindow, isExam = true) {
+    work(iframeWindow, isExam = false) {
       return new Promise(async (resolve) => {
         decode(iframeWindow);
         const Timu = iframeWindow.document.querySelectorAll(".TiMu");
@@ -4437,9 +4475,11 @@
           }
         }
         this.askStore.reset(), this.askStore.count = ques.length, this.askStore.task.name = taskType;
+        this.askStore.task.status = `✍️ 正在答题 (${taskType})`;
         for (let i = 0; i < ques.length; i++) {
           await sleep(this.defaultConfig.llmAnswerInterval), this.askStore.insert(ques[i]), this.askStore.task.work.inx = i;
           this.askStore.log(`正在获取第 ${i + 1}/${ques.length} 题答案...`, "info");
+          this.askStore.task.status = `✍️ 正在答题 (${i + 1}/${ques.length})`;
           let data = await getAnswers(ques[i], iframeWindow);
           const questionItem = this.askStore.get(i);
           if (questionItem) {
@@ -4484,10 +4524,6 @@
             this.askStore.log(`有题目未作答(${actualAnswered}/${ques.length})，暂不提交`, "error");
             iframeWindow.alert = function (e) { };
             iframeWindow.noSubmit();
-          } else if (answeredRate < this.defaultConfig.minAccuracy) {
-            this.askStore.log(`已答题率(${(answeredRate * 100).toFixed(1)}%)不足${(this.defaultConfig.minAccuracy * 100).toFixed(0)}%，暂存`, "error");
-            iframeWindow.alert = function (e) { };
-            iframeWindow.noSubmit();
           } else {
             iframeWindow.btnBlueSubmit();
             await sleep(3);
@@ -4498,7 +4534,7 @@
           resolve();
         } else {
           this.askStore.log("已完成答题，等待手动提交", "success");
-          this.askStore.task.status = `等待手动提交,已答题:${actualAnswered}/${ques.length}`;
+          this.askStore.task.status = `✍️ 等待手动提交,已答题:${actualAnswered}/${ques.length}`;
           resolve();
         }
       });
@@ -4657,6 +4693,81 @@
   // const pinia = pinia$1.createPinia(), app = vue.createApp(App).use(ElementPlus).use(pinia), _self = _unsafeWindow, top = _self.top, formStore = useformStore();
   const _self = _unsafeWindow, top = _self.top;
   var iframeCom = null;
+
+  // 全局任务ID机制，用于优化章节切换
+  let _globalTaskId = 0;
+  let _processedIframeTasks = new WeakMap();
+  window.__getAnswerTaskId__ = () => _globalTaskId;
+
+  // 后台Worker管理器，用于挂机模式
+  const BackgroundWorker = (() => {
+    let worker = null;
+    const callbacks = new Map();
+
+    const workerCode = `
+      self.onmessage = function(e) {
+        if (e.data.type === 'start') {
+          const id = e.data.id;
+          const interval = e.data.interval || 1000;
+          let timerId = setInterval(() => {
+            self.postMessage({ type: 'tick', id: id });
+          }, interval);
+          self._timers = self._timers || {};
+          self._timers[id] = timerId;
+          self.postMessage({ type: 'started', id: id });
+        } else if (e.data.type === 'stop') {
+          const id = e.data.id;
+          if (self._timers && self._timers[id]) {
+            clearInterval(self._timers[id]);
+            delete self._timers[id];
+          }
+          self.postMessage({ type: 'stopped', id: id });
+        }
+      };
+    `;
+
+    function ensure() {
+      if (worker) return;
+      try {
+        const blob = new Blob([workerCode], { type: 'application/javascript' });
+        worker = new Worker(URL.createObjectURL(blob));
+        worker.onmessage = (e) => {
+          const { type, id } = e.data;
+          if (type === 'tick' && callbacks.has(id)) {
+            callbacks.get(id)();
+          }
+        };
+        worker.onerror = (e) => {
+          console.error('[BackgroundWorker] Error:', e.message);
+        };
+      } catch (e) {
+        console.error('[BackgroundWorker] 初始化失败:', e);
+      }
+    }
+
+    return {
+      start(id, callback, interval = 1000) {
+        ensure();
+        callbacks.set(id, callback);
+        worker.postMessage({ type: 'start', id, interval });
+      },
+      stop(id) {
+        if (!worker) return;
+        callbacks.delete(id);
+        worker.postMessage({ type: 'stop', id });
+      },
+      isActive() {
+        return worker !== null;
+      },
+      destroy() {
+        if (worker) {
+          worker.terminate();
+          worker = null;
+          callbacks.clear();
+        }
+      }
+    };
+  })();
   // 添加用户选择样式
   (() => {
     document.body.oncopy = null, document.body.oncut = null, document.body.onpaste = null, document.body.onselectstart = null, document.body.ondragstart = null;
@@ -4687,6 +4798,7 @@
       cxModel.askStore.log("脚本初始化成功！", "success");
       const startWork = async () => {
         var _a, _b, _c, _d, _e;
+        const thisTaskId = ++_globalTaskId;
         await waitElementLoaded(_self, "#iframe");
         const cardsIframe = _self.document.querySelector("#iframe");
         await waitIframeLoaded(cardsIframe);
@@ -4694,6 +4806,10 @@
         top.scroll2Job();
         let jobList = _self1.document.querySelectorAll(".ans-job-icon") || [];
         for (let i = 0; i < jobList.length; i++) {
+          if (thisTaskId !== _globalTaskId) {
+            cxModel.askStore.log("检测到章节切换，停止当前任务", "warning");
+            return;
+          }
           const item = jobList[i];
           if ((_a = item.parentElement) == null ? void 0 : _a.classList.contains("ans-job-finished")) {
             const iframe = (_b = item.parentElement) == null ? void 0 : _b.querySelector("iframe");
@@ -4780,8 +4896,23 @@
                   continue;
                 }
                 iframe && (await waitIframeLoaded(iframe), await cxModel.audio(iframe.contentWindow), cxModel.askStore.log("音频任务已完成", "success"));
-              } else
-                (iframe == null ? void 0 : iframe.src.match(/\/ananas\/modules\/pdf\/index.html/)) ? (iframe && (await waitIframeLoaded(iframe), await cxModel.pdf(iframe.contentWindow), cxModel.askStore.log("pdf任务已完成", "success"))) : cxModel.askStore.log("未知任务跳过", "success");
+              } else if (iframe == null ? void 0 : iframe.src.match(/\/ananas\/modules\/pdf\/index.html/)) {
+                iframe && (await waitIframeLoaded(iframe), await cxModel.pdf(iframe.contentWindow), cxModel.askStore.log("pdf任务已完成", "success"));
+              } else {
+                cxModel.askStore.log("检测到未知任务，准备切换章节", "warning");
+                if (cxModel.defaultConfig.autoJump) {
+                  const nextButton = top == null ? void 0 : top.document.querySelector(".nextChapter");
+                  if (nextButton) {
+                    cxModel.askStore.log("自动切换到下一章节", "info");
+                    nextButton.click();
+                    return;
+                  } else {
+                    cxModel.askStore.log("未找到下一章节按钮，可能已是最后一章", "warning");
+                  }
+                } else {
+                  cxModel.askStore.log("未知任务跳过", "success");
+                }
+              }
             } catch (e) {
               cxModel.askStore.log("处理当前任务点失败，已跳过", "error");
             }
@@ -4799,11 +4930,17 @@
           const nextButton = top == null ? void 0 : top.document.querySelector(".nextChapter");
 
           // 检查当前任务是否真的完成
-          const currentJobFinished = checkCurrentJobFinished(cardsIframe);
+          if (!cardsIframe) {
+            cxModel.askStore.log("cardsIframe不存在，跳过任务完成检查", "warning");
+          } else {
+            const currentJobFinished = checkCurrentJobFinished(cardsIframe);
+            if (!currentJobFinished) {
+              cxModel.askStore.log("当前任务尚未完全完成，跳过自动切换", "warning");
+              return;
+            }
+          }
 
-          if (!currentJobFinished) {
-            cxModel.askStore.log("当前任务尚未完全完成，跳过自动切换", "warning");
-          } else if (nextButton) {
+          if (nextButton) {
             cxModel.askStore.log("准备自动切换到下一章节", "info");
             nextButton.click();
           } else {
@@ -4815,15 +4952,26 @@
       // 任务完成状态检查函数
       const checkCurrentJobFinished = (iframe) => {
         try {
+          if (!iframe) {
+            cxModel.askStore.log(`任务完成检查: iframe为空，默认允许切换`, "debug");
+            return true;
+          }
+
           const iframeWin = iframe.contentWindow;
-          if (!iframeWin) return true;
+          if (!iframeWin) {
+            cxModel.askStore.log(`任务完成检查: iframe.contentWindow为空，默认允许切换`, "debug");
+            return true;
+          }
 
           const doc = iframeWin.document;
-          if (!doc) return true;
+          if (!doc) {
+            cxModel.askStore.log(`任务完成检查: iframeWin.document为空，默认允许切换`, "debug");
+            return true;
+          }
 
           // 检查是否有测验/作业已提交的标志
           const submitSuccessFlag = doc.querySelector('.submitSuccess') ||
-            doc.querySelector('.layui-layer-content')?.textContent?.includes('提交成功') ||
+            (doc.querySelector('.layui-layer-content')?.textContent?.includes('提交成功')) ||
             doc.querySelector('.ans-submit-success');
           if (submitSuccessFlag) {
             cxModel.askStore.log(`检测到提交成功标志，任务已完成`, "debug");
@@ -4847,30 +4995,67 @@
               // 检查是否是正在处理中的任务
               if (!parent.classList.contains("ans-job-processing")) {
                 // 检查是否是测验/作业类型的任务
-                const iframe = parent.querySelector('iframe');
-                if (iframe) {
-                  const src = iframe.src || "";
-                  // 如果是测验或作业，检查是否已经提交
+                const innerIframe = parent.querySelector('iframe');
+                let taskIsFinished = false;
+
+                if (innerIframe) {
+                  const src = innerIframe.src || "";
+
+                  // 检查iframe类型并判断完成状态
                   if (src.includes("/work/") || src.includes("/exam/")) {
-                    // 检查iframe内是否有提交成功的标志
+                    // 测验/作业类型
                     try {
-                      const innerDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                      const innerDoc = innerIframe.contentDocument || (innerIframe.contentWindow && innerIframe.contentWindow.document);
                       if (innerDoc) {
                         const hasSubmitBtn = innerDoc.querySelector('.btnBlueSubmit, .submitBtn, [type="submit"]');
                         const hasResult = innerDoc.querySelector('.result, .score, .ans-result');
+                        const bodyText = innerDoc.body?.innerText || "";
+                        const hasSuccessText = bodyText.includes("提交成功") || bodyText.includes("答题已完成") || bodyText.includes("已完成");
+
                         // 如果没有提交按钮或者有结果显示，说明已完成
-                        if (!hasSubmitBtn || hasResult) {
+                        if (!hasSubmitBtn || hasResult || hasSuccessText) {
                           cxModel.askStore.log(`测验/作业任务已完成（无提交按钮或有结果）`, "debug");
-                          continue;
+                          taskIsFinished = true;
                         }
                       }
                     } catch (e) {
                       // 跨域，忽略
                     }
+                  } else if (src.includes("/video/") || src.includes("ananas/modules/video")) {
+                    // 视频类型
+                    try {
+                      const videoWin = innerIframe.contentWindow;
+                      if (videoWin && videoWin.player) {
+                        const player = videoWin.player;
+                        if (player && typeof player.currentTime === 'function' && typeof player.duration === 'function') {
+                          const currentTime = player.currentTime();
+                          const duration = player.duration();
+                          if (duration > 0 && currentTime >= duration - 2) {
+                            cxModel.askStore.log(`视频任务已完成: ${currentTime.toFixed(1)}s/${duration.toFixed(1)}s`, "debug");
+                            taskIsFinished = true;
+                          }
+                        }
+                      }
+                    } catch (e) {
+                      // 跨域，忽略
+                    }
+                  } else if (src.includes("/audio/") || src.includes("ananas/modules/audio")) {
+                    // 音频类型（通常较短，默认认为已完成）
+                    cxModel.askStore.log(`音频任务默认视为已完成`, "debug");
+                    taskIsFinished = true;
+                  } else if (src.includes("/pdf/") || src.includes("ananas/modules/pdf")) {
+                    // PDF类型（通常只需打开，默认认为已完成）
+                    cxModel.askStore.log(`PDF任务默认视为已完成`, "debug");
+                    taskIsFinished = true;
                   }
                 }
-                cxModel.askStore.log(`检测到未完成的任务: ${parent.textContent?.substring(0, 20) || "未知任务"}`, "debug");
-                hasUnfinishedJob = true;
+
+                // 如果任务未完成，标记为未完成
+                if (!taskIsFinished) {
+                  const taskName = parent.textContent?.substring(0, 30) || "未知任务";
+                  cxModel.askStore.log(`检测到未完成的任务: ${taskName}`, "debug");
+                  hasUnfinishedJob = true;
+                }
               }
             }
           }
@@ -4909,26 +5094,43 @@
 
       // 增加防抖机制，避免频繁切换
       let lastUrlChangeTime = 0;
-      setInterval(async () => {
+      const config = getConfig();
+      const afkEnabled = config.enableBackground;
+
+      const checkUrlChange = async () => {
         try {
           await waitElementLoaded(_self, "#iframe");
           const cardsIframe = _self.document.querySelector("#iframe");
           await waitIframeLoaded(cardsIframe);
           const _self1 = cardsIframe.contentWindow;
 
-          // 检查URL是否真的变化，且距离上次变化超过2秒
+          // 检查URL是否真的变化，且距离上次变化超过3秒（增加时间避免误判）
           const now = Date.now();
-          if (iframeCom !== _self1.location.href && (now - lastUrlChangeTime > 2000)) {
-            cxModel.askStore.log(`检测到章节切换: ${iframeCom} -> ${_self1.location.href}`, "info");
+          if (iframeCom !== _self1.location.href && (now - lastUrlChangeTime > 3000)) {
             iframeCom = _self1.location.href;
             lastUrlChangeTime = now;
+            // 增加任务ID，标记章节切换
+            ++_globalTaskId;
+            // 清除所有可能的定时器，避免状态冲突
+            window.clearInterval(window.videoIntervalId);
+            window.clearInterval(window.popupIntervalId);
             cxModel.askStore.reset();
+            cxModel.askStore.log("检测到章节切换，重新开始任务", "info");
             startWork();
           }
         } catch (e) {
           cxModel.askStore.log(`章节切换检查异常: ${e.message}`, "warning");
         }
-      }, 2e3);
+      };
+
+      if (afkEnabled) {
+        BackgroundWorker.start('url_watcher', checkUrlChange, 2000);
+      } else {
+        setInterval(() => checkUrlChange(), 2000);
+      }
+
+      // 立即启动任务
+      startWork();
       break;
     case "/mooc2-ans/mycourse/stu":
     case "/mooc-ans/mycourse/stu":
