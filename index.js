@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         📚 超星学习通智能刷题助手升级版
 // @namespace    chaoxing-dae2321
-// @version      1.0.8
+// @version      1.0.9
 // @author       dae2321
-// @description  📚 可部署ollama本地大模型，支持AnythingLLm知识库，可刷视频弹题，ai自动刷题，AnythingLLm支持图片题，需要api可联系作者体验 交流群q群1057741101
+// @description  📚 可使用ollama部署本地大模型，支持AnythingLLm知识库，可刷视频弹题，ai自动刷题，AnythingLLm支持图片题，需要api可联系作者体验 交流群q群1057741101
 
 // @icon         https://www.google.com/s2/favicons?domain=chaoxing.com
 // @match        *://*.chaoxing.com/*
@@ -2873,7 +2873,6 @@
                 return matchArr.length > 0 ? answer : false;
             case "3":
                 console.log("🎯 [setAnswer] 处理判断题");
-                // 标准化判断题答案
                 let normalizedAnswer = answer;
                 if (answer instanceof Array && answer.length > 0) {
                     normalizedAnswer = answer[0];
@@ -2886,11 +2885,106 @@
                 console.log("🎯 [setAnswer] 标准化后的答案:", normalizedAnswer);
 
                 console.log("🎯 [setAnswer] 清除当前选择");
-                return clearCurrent(html, iframeWindow), $$1(html).find("ul:eq(0) li :radio,:checkbox,textarea").each(function () {
-                    "true" == $$1(this).val() ? normalizedAnswer.match(/(^|,)(True|true|正确|是|对|√|T|ri)(,|$)/) && ($$1(this).click(), console.log("🎯 [setAnswer] 选择正确选项")) : normalizedAnswer.match(/(^|,)(False|false|错误|否|错|×|F|wr)(,|$)/) && ($$1(this).click(), console.log("🎯 [setAnswer] 选择错误选项"));
-                }), $$1(html).find(".answerBg").each(function () {
-                    "true" == $$1(this).find(".num_option").attr("data") ? normalizedAnswer.match(/(^|,)(True|true|正确|是|对|√|T|ri)(,|$)/) && $$1(this).click() : normalizedAnswer.match(/(^|,)(False|false|错误|否|错|×|F|wr)(,|$)/) && $$1(this).click();
-                }), !!($$1(html).find("ul:eq(0) li :radio,:checkbox,textarea").is(":checked") || $$1(html).find(".check_answer").length > 0 || $$1(html).find(".check_answer_dx").length > 0) && answer;
+                clearCurrent(html, iframeWindow);
+
+                let judgeSelected = false;
+
+                // 方法1: 通过 value 属性匹配
+                $$1(html).find("ul:eq(0) li :radio,:checkbox").each(function () {
+                    const val = $$1(this).val();
+                    const optText = $$1(this).parent().text() || $$1(this).closest("li").text() || "";
+                    if (val === "true" || val === true) {
+                        if (normalizedAnswer.match(/(^|,)(True|true|正确|是|对|√|T|ri)(,|$)/)) {
+                            $$1(this).click();
+                            console.log("🎯 [setAnswer] 选择正确选项 (通过value)");
+                            judgeSelected = true;
+                        }
+                    } else if (val === "false" || val === false) {
+                        if (normalizedAnswer.match(/(^|,)(False|false|错误|否|错|×|F|wr)(,|$)/)) {
+                            $$1(this).click();
+                            console.log("🎯 [setAnswer] 选择错误选项 (通过value)");
+                            judgeSelected = true;
+                        }
+                    } else if (!judgeSelected) {
+                        // 方法2: 通过选项文本匹配
+                        const normOptText = optText.replace(/[A-Za-z][、.．:：]/g, "").trim();
+                        if (normOptText.includes("对") || normOptText.includes("正确") || normOptText.includes("√") || normOptText.includes("是")) {
+                            if (normalizedAnswer.match(/(^|,)(True|true|正确|是|对|√|T|ri)(,|$)/)) {
+                                $$1(this).click();
+                                console.log("🎯 [setAnswer] 选择正确选项 (通过文本):", optText);
+                                judgeSelected = true;
+                            }
+                        } else if (normOptText.includes("错") || normOptText.includes("错误") || normOptText.includes("×") || normOptText.includes("否")) {
+                            if (normalizedAnswer.match(/(^|,)(False|false|错误|否|错|×|F|wr)(,|$)/)) {
+                                $$1(this).click();
+                                console.log("🎯 [setAnswer] 选择错误选项 (通过文本):", optText);
+                                judgeSelected = true;
+                            }
+                        }
+                    }
+                });
+
+                // 方法3: 通过 .answerBg 匹配
+                if (!judgeSelected) {
+                    $$1(html).find(".answerBg").each(function () {
+                        const data = $$1(this).find(".num_option").attr("data");
+                        const optText = $$1(this).text() || "";
+                        if (data === "true") {
+                            if (normalizedAnswer.match(/(^|,)(True|true|正确|是|对|√|T|ri)(,|$)/)) {
+                                $$1(this).click();
+                                console.log("🎯 [setAnswer] 选择正确选项 (通过answerBg)");
+                                judgeSelected = true;
+                            }
+                        } else if (data === "false") {
+                            if (normalizedAnswer.match(/(^|,)(False|false|错误|否|错|×|F|wr)(,|$)/)) {
+                                $$1(this).click();
+                                console.log("🎯 [setAnswer] 选择错误选项 (通过answerBg)");
+                                judgeSelected = true;
+                            }
+                        } else {
+                            // 通过文本匹配
+                            const normOptText = optText.replace(/[A-Za-z][、.．:：]/g, "").trim();
+                            if (normOptText.includes("对") || normOptText.includes("正确") || normOptText.includes("√")) {
+                                if (normalizedAnswer.match(/(^|,)(True|true|正确|是|对|√|T|ri)(,|$)/)) {
+                                    $$1(this).click();
+                                    console.log("🎯 [setAnswer] 选择正确选项 (通过answerBg文本):", optText);
+                                    judgeSelected = true;
+                                }
+                            } else if (normOptText.includes("错") || normOptText.includes("错误") || normOptText.includes("×")) {
+                                if (normalizedAnswer.match(/(^|,)(False|false|错误|否|错|×|F|wr)(,|$)/)) {
+                                    $$1(this).click();
+                                    console.log("🎯 [setAnswer] 选择错误选项 (通过answerBg文本):", optText);
+                                    judgeSelected = true;
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // 方法4: 直接点击 li 元素
+                if (!judgeSelected) {
+                    $$1(html).find("ul:eq(0) li").each(function () {
+                        const optText = $$1(this).text() || "";
+                        const normOptText = optText.replace(/[A-Za-z][、.．:：]/g, "").trim();
+                        if (normOptText.includes("对") || normOptText.includes("正确") || normOptText.includes("√")) {
+                            if (normalizedAnswer.match(/(^|,)(True|true|正确|是|对|√|T|ri)(,|$)/)) {
+                                $$1(this).click();
+                                console.log("🎯 [setAnswer] 选择正确选项 (通过li):", optText);
+                                judgeSelected = true;
+                                return false;
+                            }
+                        } else if (normOptText.includes("错") || normOptText.includes("错误") || normOptText.includes("×")) {
+                            if (normalizedAnswer.match(/(^|,)(False|false|错误|否|错|×|F|wr)(,|$)/)) {
+                                $$1(this).click();
+                                console.log("🎯 [setAnswer] 选择错误选项 (通过li):", optText);
+                                judgeSelected = true;
+                                return false;
+                            }
+                        }
+                    });
+                }
+
+                return judgeSelected ? answer : false;
             case "2":
             case "9":
             case "4":
@@ -4309,7 +4403,9 @@
 
                 let allFinished = false;
                 let checkCount = 0;
-                while (!allFinished && checkCount < 10) {
+                const maxCheckCount = 20;
+
+                while (!allFinished && checkCount < maxCheckCount) {
                     if (thisTaskId !== _globalTaskId) {
                         cxModel.askStore.log("检测到章节切换，取消等待", "warning");
                         return;
@@ -4317,16 +4413,29 @@
 
                     jobList = _self1.document.querySelectorAll(".ans-job-icon") || [];
                     allFinished = true;
+
                     for (const item of jobList) {
                         const parentEl = item.parentElement;
-                        if (!parentEl?.classList.contains("ans-job-finished")) {
+                        if (!parentEl) continue;
+
+                        if (!parentEl.classList.contains("ans-job-finished")) {
                             allFinished = false;
+
+                            const iframe = parentEl.querySelector("iframe");
+                            if (iframe) {
+                                try {
+                                    const iframeWin = iframe.contentWindow;
+                                    if (iframeWin && iframeWin.isUnFinishJob && iframeWin.isUnFinishJob()) {
+                                        cxModel.askStore.log(`任务点未完成，继续等待...`, "info");
+                                    }
+                                } catch (e) { }
+                            }
                             break;
                         }
                     }
 
                     if (!allFinished) {
-                        cxModel.askStore.log(`等待所有任务完成... (${checkCount + 1}/10)`, "info");
+                        cxModel.askStore.log(`等待所有任务完成... (${checkCount + 1}/${maxCheckCount})`, "info");
                         await sleep(cxModel.defaultConfig.interval);
                         checkCount++;
                     }
@@ -4334,20 +4443,16 @@
 
                 if (!allFinished) {
                     cxModel.askStore.log("部分任务未完成，请检查", "warning");
+                    return;
                 }
+
+                cxModel.askStore.log("所有任务点已完成", "success");
 
                 await sleep(cxModel.defaultConfig.interval);
 
                 if (!cxModel.defaultConfig.autoJump) {
-                    cxModel.askStore.log("所有任务点已完成，未开启自动切换", "warning");
+                    cxModel.askStore.log("自动切换已关闭", "warning");
                     return;
-                }
-
-                let retryCount = 0;
-                while (!checkCurrentJobFinished(cardsIframe) && retryCount < 3) {
-                    cxModel.askStore.log(`等待任务完成... (${retryCount + 1}/3)`, "info");
-                    await sleep(cxModel.defaultConfig.interval);
-                    retryCount++;
                 }
 
                 if (thisTaskId !== _globalTaskId) {
